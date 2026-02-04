@@ -50,5 +50,40 @@ def main():
             )
 
 
+
+
+    # 5. Find best model and register it
+    from mlflow.tracking import MlflowClient
+    
+    best_run = None
+    lowest_rmse = float("inf")
+
+    # Loop over runs to find the best one
+    client = MlflowClient()
+    experiment = client.get_experiment_by_name("diabetes-baseline")
+    runs = client.search_runs(
+        experiment_ids=[experiment.experiment_id],
+        order_by=["metrics.rmse ASC"],
+        max_results=1
+    )
+    if runs:
+        best_run = runs[0]
+        lowest_rmse = best_run.data.metrics["rmse"]
+        print(f"Best run_id: {best_run.info.run_id}, RMSE: {lowest_rmse}")
+
+        # Register model
+        model_uri = f"runs:/{best_run.info.run_id}/model"
+        registered_model_name = "diabetes_regressor"
+        mlflow.register_model(model_uri, registered_model_name)
+
+        # Promote to Production stage
+        client.transition_model_version_stage(
+            name=registered_model_name,
+            version=1,  # first version
+            stage="Production"
+        )
+        print(f"Model {registered_model_name} promoted to Production")
+
+
 if __name__ == "__main__":
     main()
