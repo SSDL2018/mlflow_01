@@ -35,7 +35,7 @@ def main():
             model.fit(X_train, y_train)
             preds = model.predict(X_test)
 
-            rmse = mean_squared_error(y_test, preds, squared=False)
+            rmse = mean_squared_error(y_test, preds)**0.5
 
             # 4. Log everything
             mlflow.log_params(params)
