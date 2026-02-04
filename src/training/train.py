@@ -15,21 +15,29 @@ def main():
     mlflow.set_experiment("diabetes-baseline")
 
 
+param_options = [
+    {"n_estimators": 50, "max_depth": 3},
+    {"n_estimators": 100, "max_depth": 5},
+    {"n_estimators": 200, "max_depth": 7},
+]
+
+for params in param_options:
     with mlflow.start_run():
         model = RandomForestRegressor(
-            n_estimators=100,
-            max_depth=5,
+            n_estimators=params["n_estimators"],
+            max_depth=params["max_depth"],
             random_state=42
         )
-
         model.fit(X_train, y_train)
         preds = model.predict(X_test)
+        rmse = mean_squared_error(y_test, preds, squared=False)
 
-        rmse = mean_squared_error(y_test, preds) ** 0.5
-
-        mlflow.log_param("n_estimators", 100)
-        mlflow.log_param("max_depth", 5)
+        mlflow.log_params(params)
         mlflow.log_metric("rmse", rmse)
+        mlflow.sklearn.log_model(model, artifact_path="model")
+
+        mlflow.set_tag("model_type", "random_forest")
+
 
         mlflow.sklearn.log_model(
             model,
