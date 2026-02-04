@@ -11,6 +11,10 @@ def main():
         X, y, test_size=0.2, random_state=42
     )
 
+    #  This sets or creates the experiment
+    mlflow.set_experiment("diabetes-baseline")
+
+
     with mlflow.start_run():
         model = RandomForestRegressor(
             n_estimators=100,
@@ -21,7 +25,7 @@ def main():
         model.fit(X_train, y_train)
         preds = model.predict(X_test)
 
-        rmse = mean_squared_error(y_test, preds, squared=False)
+        rmse = mean_squared_error(y_test, preds) ** 0.5
 
         mlflow.log_param("n_estimators", 100)
         mlflow.log_param("max_depth", 5)
