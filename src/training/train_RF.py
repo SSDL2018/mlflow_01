@@ -19,9 +19,9 @@ def main():
     )
 
     param_options = [
-        {"n_estimators": 50, "max_depth": 3},
-        {"n_estimators": 100, "max_depth": 5},
-        {"n_estimators": 200, "max_depth": 7},
+        {"n_estimators": 55, "max_depth": 3},
+        {"n_estimators": 2000, "max_depth": 5},
+        {"n_estimators": 20, "max_depth": 7},
         {"n_estimators": 200, "max_depth": 3},
         {"n_estimators": 100, "max_depth": 20},
     ]
@@ -35,17 +35,29 @@ def main():
 
             model.fit(X_train, y_train)
             preds = model.predict(X_test)
-            rmse = mean_squared_error(y_test, preds, squared=False)
+            rmse = mean_squared_error(y_test, preds) ** 0.5
 
             mlflow.log_params(params)
             mlflow.log_metric("rmse", rmse)
 
+            # 🔖 Common tags 
+            mlflow.set_tag("dataset", "sklearn_diabetes")
+            mlflow.set_tag("run_type", "baseline")
+
+            # 🔖 Model-specific
             mlflow.set_tag("model_type", "random_forest")
+
+            from mlflow.models.signature import infer_signature
+
+            signature = infer_signature(X_train, model.predict(X_train))
 
             mlflow.sklearn.log_model(
                 model,
-                artifact_path="model"
+                artifact_path="model",
+                signature=signature,
+                input_example=X_train[:5]
             )
+
 
             print(f"Logged run with RMSE={rmse:.4f}")
 
