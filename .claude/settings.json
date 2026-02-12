@@ -1,0 +1,10 @@
+{
+  "enabledPlugins": {
+    "frontend-mobile-development@claude-code-workflows": true
+  },
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "f669794d425946ca8510b9fbff2758d9.mP7SqMZKzqtufA3H",
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "API_TIMEOUT_MS": "6000000"
+  }
+}

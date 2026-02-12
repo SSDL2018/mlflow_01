@@ -3,21 +3,21 @@ import mlflow
 from mlflow.tracking import MlflowClient
 
 # --------------------------------------------------
-# 🔒 Absolute path to mlflow.db (ROOT-level)
+# 🔒 Use environment variable for tracking URI
 # --------------------------------------------------
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-MLFLOW_DB_PATH = os.path.join(PROJECT_ROOT, "mlflow.db")
 
-TRACKING_URI = f"sqlite:///{MLFLOW_DB_PATH}"
+TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
 EXPERIMENT_NAME = "diabetes-baseline"
 REGISTERED_MODEL_NAME = "diabetes_best_model"
 
 mlflow.set_tracking_uri(TRACKING_URI)
+artifact_root = os.getenv("MLFLOW_ARTIFACT_ROOT", "file:./mlruns")
+
 
 def main():
-    print(f"📍 Using MLflow DB at: {MLFLOW_DB_PATH}")
+    print(f"📍 Using MLflow tracking URI: {TRACKING_URI}")
 
-    client = MlflowClient(tracking_uri=TRACKING_URI)
+    client = MlflowClient()
 
     experiment = client.get_experiment_by_name(EXPERIMENT_NAME)
     if experiment is None:
@@ -41,26 +41,27 @@ def main():
 
     print("\n🏆 Best run selected")
     print(f"Run ID     : {run_id}")
-    print(f"Model type: {model_type}")
-    print(f"RMSE      : {rmse:.4f}")
+    print(f"Model type : {model_type}")
+    print(f"RMSE       : {rmse:.4f}")
 
-    # 2️⃣ Register model (ensure unique name)
+    # 2️⃣ Register model
     model_uri = f"runs:/{run_id}/model"
+
     result = mlflow.register_model(
         model_uri=model_uri,
         name=REGISTERED_MODEL_NAME
     )
+
     model_version = result.version
 
     print(f"\n📦 Registered model version: {model_version}")
 
-
+    # 3️⃣ Add descriptions
     client.update_registered_model(
         name=REGISTERED_MODEL_NAME,
         description=(
-            "Diabetes regression model trained on the sklearn diabetes dataset. "
-            "Automatically selected based on lowest RMSE across baseline models "
-            "(Random Forest, Ridge, SVR)."
+            "Diabetes regression model trained on sklearn diabetes dataset. "
+            "Auto-selected based on lowest RMSE."
         )
     )
 
@@ -71,11 +72,11 @@ def main():
             f"Selected for production.\n"
             f"Model type: {model_type}\n"
             f"RMSE: {rmse:.4f}\n"
-            f"Selection criteria: lowest validation RMSE among baseline models."
+            f"Selection criteria: lowest validation RMSE."
         )
     )
 
-    # 3️⃣ Promote to Production stage
+    # 4️⃣ Promote to Production
     client.transition_model_version_stage(
         name=REGISTERED_MODEL_NAME,
         version=model_version,
@@ -85,9 +86,10 @@ def main():
 
     print(f"\n🚀 Model promoted to Production: {REGISTERED_MODEL_NAME} v{model_version}")
 
-    # 4️⃣ Tag run for traceability
+    # 5️⃣ Tag run
     client.set_tag(run_id, "selected_for_production", "true")
     client.set_tag(run_id, "selection_reason", "lowest_rmse")
+
 
 if __name__ == "__main__":
     main()

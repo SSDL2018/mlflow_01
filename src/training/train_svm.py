@@ -1,3 +1,4 @@
+import os
 import mlflow
 import mlflow.sklearn
 
@@ -8,8 +9,18 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_squared_error
 
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
+artifact_root = os.getenv("MLFLOW_ARTIFACT_ROOT", "file:./mlruns")
+
+# Create experiment with relative artifact location if it doesn't exist
+from mlflow.tracking import MlflowClient
+client = MlflowClient()
+experiment = client.get_experiment_by_name("diabetes-baseline")
+if experiment is None:
+    mlflow.create_experiment("diabetes-baseline", artifact_location=artifact_root)
+
 mlflow.set_experiment("diabetes-baseline")
+
 
 
 def main():
@@ -56,7 +67,7 @@ def main():
 
             mlflow.sklearn.log_model(
                 model,
-                artifact_path="model",
+                name="model",
                 signature=signature,
                 input_example=X_train[:5]
             )
