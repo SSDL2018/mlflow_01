@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  mlflow:
+    image: python:3.12-slim
+    container_name: mlflow
+    working_dir: /mlflow
+    volumes:
+      - ./mlflow.db:/mlflow/mlflow.db
+      - ./mlruns:/mlflow/mlruns
+    ports:
+      - "5001:5001"
+    command: >
+      sh -c "
+      pip install mlflow &&
+      mlflow ui
+      --backend-store-uri sqlite:///mlflow.db
+      --default-artifact-root ./mlruns
+      --host 0.0.0.0
+      --port 5001
+      "
+
+  api:
+    build: .
+    container_name: diabetes-api
+    working_dir: /home/shahsa/ml-production-lab
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/home/shahsa/ml-production-lab
+    environment:
+      - MLFLOW_TRACKING_URI=sqlite:///mlflow.db
+      - MODEL_NAME=diabetes_best_model
+      - MODEL_STAGE=Production
+    depends_on:
+      - mlflow
