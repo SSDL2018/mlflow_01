@@ -53,7 +53,7 @@ def main():
             mlflow.log_params(params)
             mlflow.log_metric("rmse", rmse)
 
-            # 🔖 Common tags 
+            # 🔖 Common tags
             mlflow.set_tag("dataset", "sklearn_diabetes")
             mlflow.set_tag("run_type", "baseline")
 
